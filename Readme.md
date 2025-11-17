@@ -1,75 +1,104 @@
-🚀 Ejemplo Completo del Ciclo CI/CD con Python + GitHub Actions
-Construcción de Package + Pruebas + Artefactos
+# 🚀 CI/CD con Python y GitHub Actions
 
-Este repositorio explica paso a paso cómo funciona un pipeline CI/CD utilizando GitHub Actions, desde el push del código hasta la generación de un package de Python (sdist y wheel).
-Incluye ejemplo práctico, archivo de workflow funcional, pruebas unitarias y artefactos generados automáticamente.
+**Construcción de Package + Pruebas + Artefactos**
 
-📌 1. ¿Qué es CI/CD?
-✔ CI (Integración Continua)
+Este repositorio sirve como un ejemplo **completo y funcional** del ciclo de **Integración Continua (CI)** y **Entrega Continua (CD)** utilizando Python, `pytest`, y automatizado completamente con **GitHub Actions**.
 
-Proceso automático que se ejecuta cada vez que subimos código al repositorio. Incluye actividades como:
+Aprende cómo configurar un pipeline que va desde el *push* del código hasta la generación de un paquete de Python (`sdist` y `wheel`) listo para distribuir.
 
-Descargar el repositorio
+-----
 
-Instalar dependencias
+## 📌 1. Conceptos Clave: CI/CD
 
-Ejecutar pruebas unitarias
+### ✔️ Integración Continua (CI)
 
-Validar que el código funcione correctamente
+Es el proceso automático que se ejecuta cada vez que se sube código al repositorio (p. ej., un `git push`). Su objetivo es validar la funcionalidad del código lo antes posible.
 
-✔ CD (Entrega Continua)
+**Actividades de CI en este proyecto:**
 
-Consiste en generar automáticamente un package o artefacto listo para distribuir o desplegar.
-En este proyecto, se construye el package en formato estándar de Python (*.tar.gz y *.whl) dentro de dist/.
+  * Descargar el repositorio.
+  * Instalar dependencias.
+  * **Ejecutar pruebas unitarias** (`pytest`).
+  * Validar que el código funcione correctamente.
 
-📌 2. Estructura del Proyecto
+### ✔️ Entrega Continua (CD)
+
+Consiste en generar automáticamente un *package* o *artefacto* listo para ser distribuido o desplegado.
+
+**Actividad de CD en este proyecto:**
+
+  * Construcción del paquete de Python en formato estándar (`*.tar.gz` y `*.whl`) dentro del directorio `dist/`.
+
+-----
+
+## 📂 2. Estructura del Proyecto
+
+El proyecto sigue una estructura modular para facilitar las pruebas y la empaquetación:
+
+```
 ci_cd_python/
-├── app.py
-├── calculator.py
+├── app.py                  # Aplicación principal que usa el módulo calculator
+├── calculator.py           # Módulo con la lógica del negocio
 ├── tests/
-│   └── test_calculator.py
-├── pyproject.toml
+│   └── test_calculator.py  # Pruebas unitarias para calculator.py
+├── pyproject.toml          # Configuración del proyecto para build (PEP 517/621)
 └── .github/
     └── workflows/
-        └── ci.yml
+        └── ci.yml          # Flujo de trabajo de GitHub Actions
+```
 
-📌 3. Explicación del Ejemplo Práctico
+-----
 
-Este proyecto incluye:
+## 💻 3. Ejemplo Práctico
 
-Una función matemática simple
+Este ejemplo se centra en un módulo simple de cálculo para demostrar el pipeline completo: una función matemática, una aplicación principal y sus pruebas automáticas con `pytest`.
 
-Una app principal
+### ✔️ 3.1 `calculator.py`
 
-Pruebas automáticas con pytest
+Contiene la función que se prueba y empaqueta.
 
-✔ 3.1 Archivo calculator.py
+```python
 def add(a, b):
     """Suma dos números y devuelve el resultado."""
     return a + b
+```
 
-✔ 3.2 Archivo app.py
+### ✔️ 3.2 `app.py`
+
+Un ejemplo de cómo se utilizaría el módulo `calculator` localmente.
+
+```python
 from calculator import add
 
 if __name__ == "__main__":
-    print("Suma:", add(5, 7))
+    print("Suma:", add(5, 7)) # Salida: Suma: 12
+```
 
-✔ 3.3 Archivo de pruebas tests/test_calculator.py
+### ✔️ 3.3 `tests/test_calculator.py`
+
+El archivo clave para el CI, donde se definen las pruebas unitarias.
+
+```python
 from calculator import add
 
 def test_add():
+    # Comprueba que la función add() funciona correctamente
     assert add(2, 3) == 5
 
+# Si alguna prueba falla, el CI detiene el pipeline inmediatamente.
+```
 
-Comprueba que la función add() funciona correctamente
+-----
 
-Si falla → el CI detiene el pipeline
+## ⚙️ 4. Pipeline CI/CD (GitHub Actions)
 
-📌 4. Pipeline CI/CD (GitHub Actions)
+El flujo de trabajo se define en el archivo `.github/workflows/ci.yml`.
 
-Archivo: .github/workflows/ci.yml
+> **Nota:** Se ha aplicado la corrección para el error de `ModuleNotFoundError` que tuviste, asegurando que `pytest` encuentre el módulo `calculator.py`.
 
-Contenido:
+### Contenido de `.github/workflows/ci.yml`
+
+```yaml
 name: CI Pipeline
 
 on:
@@ -93,8 +122,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest build
 
-      - name: Run tests
-        run: pytest
+      - name: Run tests 🧪 (Corrección para imports)
+        run: |
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          pytest
 
       - name: Build Python package
         run: python -m build
@@ -104,60 +135,76 @@ jobs:
         with:
           name: python-package
           path: dist/*
+```
 
-📌 5. Cómo funciona el pipeline
+-----
 
-Push al repositorio: Cada vez que haces git push, GitHub ejecuta el workflow.
+## 🔄 5. Flujo de Ejecución del Pipeline
 
-Instalación del entorno: Crea una VM Ubuntu y descarga el repositorio.
+1.  **Activación:** Un evento (`push` o `pull_request`) inicia el flujo.
+2.  **Instalación del entorno:** Se provisiona una VM Ubuntu y se configura Python 3.10.
+3.  **Ejecución de pruebas (CI):** Se corre `pytest`. **Si las pruebas fallan, el pipeline termina con error.**
+4.  **Construcción del Package (CD):** Si las pruebas son exitosas, se ejecuta `python -m build`, generando los archivos en `dist/`:
+      * `*.tar.gz`: Source Distribution (`sdist`)
+      * `*.whl`: Built Distribution (`wheel`)
+5.  **Publicación de Artifacts:** GitHub Actions sube los archivos de `dist/` como un *artifact* descargable, llamado `python-package`, accesible desde la interfaz web de la acción completada.
 
-Ejecución de pruebas: Corre pytest. Si falla → pipeline detenido.
+-----
 
-Construcción del package: Ejecuta python -m build → genera dist/ con:
+## 💻 6. Ejecución Local (Opcional)
 
-*.tar.gz → source distribution
+Puedes replicar el entorno de CI en tu máquina local para probar el código antes de hacer un *push*.
 
-*.whl → wheel
+### 1\. Crear y activar entorno virtual
 
-Publicación de artifacts: GitHub Actions guarda los archivos de dist/ como artifacts descargables.
-
-📌 6. Ejecución local
-
-Crear y activar entorno virtual:
-
+```bash
 python -m venv .venv
+
 # Linux/macOS:
 source .venv/bin/activate
+
 # Windows PowerShell:
 .venv\Scripts\activate
+```
 
+### 2\. Instalar dependencias
 
-Instalar dependencias:
-
+```bash
 python -m pip install --upgrade pip
 pip install pytest build
+```
 
+### 3\. Ejecutar pruebas
 
-Ejecutar pruebas:
-
+```bash
 pytest
+```
 
+### 4\. Construir el package local
 
-Construir el package local:
-
+```bash
 python -m build
-# Archivos generados en dist/: .tar.gz y .whl
 
-📌 7. Subir al repositorio
+```
+
+-----
+
+## ⬆️ 7. Subir al Repositorio
+
+Si aún no lo has hecho, sigue estos pasos para inicializar tu repositorio y subir el código:
+
+```bash
 git init
 git add .
 git commit -m "Initial commit: CI/CD Python pipeline"
 git branch -M main
 git remote add origin https://github.com/TU_USUARIO/ci_cd_python.git
 git push -u origin main
+```
 
+-----
 
-📌 8. Autor
+## 👤 8. Autor
 
-Omar — Proyecto CI/CD en Python
-Año: 2025
+**Omar** — Proyecto CI/CD en Python
+**Año:** 2025
