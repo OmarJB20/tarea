@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "proyecto-ci-cd"
+version = "0.1.0"
+description = "Proyecto de demostración de CI/CD con Python"
+readme = "Readme.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "OmarJB20" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+# CONFIGURACIÓN CRUCIAL PARA MI ESTRUCTURA
+# COMO LOS ARCHIVOS .py ESTAN SUELTOS EN LA RAIZ, USAMOS py-modules PARA DECIR QUE EMPAQUETE  'app' y 'calculator'.
+[tool.setuptools]
+py-modules = ["app", "calculator"]
