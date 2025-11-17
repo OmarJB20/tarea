@@ -1,3 +1,12 @@
+¡Perfecto\! Entendido. He integrado la explicación detallada del archivo **`pyproject.toml`** (el punto clave que solucionó tu error) dentro de la estructura que me pasaste.
+
+Lo he colocado en la sección **3.4**, explicando exactamente por qué lo configuramos así para tus archivos sueltos en la raíz.
+
+Aquí tienes el `README.md` completo y corregido, listo para copiar y pegar:
+
+-----
+
+````markdown
 # 🚀 CI/CD con Python y GitHub Actions
 
 **Construcción de Package + Pruebas + Artefactos**
@@ -11,51 +20,48 @@ Aprende cómo configurar un pipeline que va desde el *push* del código hasta la
 ## 📌 1. Conceptos Clave: CI/CD
 
 ### ✔️ Integración Continua (CI)
-
 Es el proceso automático que se ejecuta cada vez que se sube código al repositorio (p. ej., un `git push`). Su objetivo es validar la funcionalidad del código lo antes posible.
 
 **Actividades de CI en este proyecto:**
-
-  * Descargar el repositorio.
-  * Instalar dependencias.
-  * **Ejecutar pruebas unitarias** (`pytest`).
-  * Validar que el código funcione correctamente.
+* Descargar el repositorio.
+* Instalar dependencias.
+* **Ejecutar pruebas unitarias** (`pytest`).
+* Validar que el código funcione correctamente.
 
 ### ✔️ Entrega Continua (CD)
-
 Consiste en generar automáticamente un *package* o *artefacto* listo para ser distribuido o desplegado.
 
 **Actividad de CD en este proyecto:**
-
-  * Construcción del paquete de Python en formato estándar (`*.tar.gz` y `*.whl`) dentro del directorio `dist/`.
+* Construcción del paquete de Python en formato estándar (`*.tar.gz` y `*.whl`) dentro del directorio `dist/`, utilizando la configuración definida en `pyproject.toml`.
 
 -----
 
 ## 📂 2. Estructura del Proyecto
 
-El proyecto sigue una estructura modular para facilitar las pruebas y la empaquetación:
+El proyecto sigue una estructura plana donde los módulos residen en la raíz. Es vital tener el archivo de configuración correcto para que esto funcione:
 
-```
+```text
 ci_cd_python/
-├── app.py                  # Aplicación principal que usa el módulo calculator
-├── calculator.py           # Módulo con la lógica del negocio
+├── app.py              # Aplicación principal que usa el módulo calculator
+├── calculator.py       # Módulo con la lógica del negocio
 ├── tests/
 │   └── test_calculator.py  # Pruebas unitarias para calculator.py
-├── pyproject.toml          # Configuración del proyecto para build (PEP 517/621)
+├── pyproject.toml      # ⚙️ Configuración CRUCIAL para el build (Solución de errores)
+├── Readme.md           # Documentación del proyecto
 └── .github/
     └── workflows/
-        └── ci.yml          # Flujo de trabajo de GitHub Actions
-```
+        └── ci.yml      # Flujo de trabajo de GitHub Actions
+````
 
 -----
 
 ## 💻 3. Ejemplo Práctico
 
-Este ejemplo se centra en un módulo simple de cálculo para demostrar el pipeline completo: una función matemática, una aplicación principal y sus pruebas automáticas con `pytest`.
+Este ejemplo se centra en un módulo simple de cálculo para demostrar el pipeline completo.
 
 ### ✔️ 3.1 `calculator.py`
 
-Contiene la función que se prueba y empaqueta.
+Contiene la función lógica que se probará y empaquetará.
 
 ```python
 def add(a, b):
@@ -76,7 +82,7 @@ if __name__ == "__main__":
 
 ### ✔️ 3.3 `tests/test_calculator.py`
 
-El archivo clave para el CI, donde se definen las pruebas unitarias.
+El archivo clave para el CI, donde se definen las pruebas unitarias con `pytest`.
 
 ```python
 from calculator import add
@@ -84,17 +90,36 @@ from calculator import add
 def test_add():
     # Comprueba que la función add() funciona correctamente
     assert add(2, 3) == 5
+```
 
-# Si alguna prueba falla, el CI detiene el pipeline inmediatamente.
+### ✔️ 3.4 `pyproject.toml` (Configuración de Compilación)
+
+Este archivo es **obligatorio** para construir paquetes modernos en Python. Sin él, el pipeline falla con el error: *`does not appear to be a Python project`*.
+
+**¿Qué hace exactamente este archivo?**
+
+1.  **Define el sistema de build:** Indica a Python que use `setuptools`.
+2.  **Metadatos:** Establece el nombre (`proyecto-ci-cd`), versión y autores.
+3.  **Mapeo de archivos (La parte clave):** Dado que nuestros archivos `.py` están sueltos en la raíz (y no en una carpeta `src`), usamos la directiva `py-modules` para indicar explícitamente qué archivos incluir.
+
+<!-- end list -->
+
+```toml
+[project]
+name = "proyecto-ci-cd"
+version = "0.1.0"
+# ... metadatos ...
+
+[tool.setuptools]
+# Le dice al constructor que empaquete estos archivos específicos
+py-modules = ["app", "calculator"]
 ```
 
 -----
 
 ## ⚙️ 4. Pipeline CI/CD (GitHub Actions)
 
-El flujo de trabajo se define en el archivo `.github/workflows/ci.yml`.
-
-> **Nota:** Se ha aplicado la corrección para el error de `ModuleNotFoundError` que tuviste, asegurando que `pytest` encuentre el módulo `calculator.py`.
+El flujo de trabajo se define en el archivo `.github/workflows/ci.yml`. Se asegura de configurar el `PYTHONPATH` correctamente para las pruebas y usa `pyproject.toml` para la construcción.
 
 ### Contenido de `.github/workflows/ci.yml`
 
@@ -122,7 +147,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest build
 
-      - name: Run tests 🧪 (Corrección para imports)
+      - name: Run tests 🧪 (Corregido el PYTHONPATH)
         run: |
           export PYTHONPATH=$PYTHONPATH:$(pwd)
           pytest
@@ -144,67 +169,50 @@ jobs:
 1.  **Activación:** Un evento (`push` o `pull_request`) inicia el flujo.
 2.  **Instalación del entorno:** Se provisiona una VM Ubuntu y se configura Python 3.10.
 3.  **Ejecución de pruebas (CI):** Se corre `pytest`. **Si las pruebas fallan, el pipeline termina con error.**
-4.  **Construcción del Package (CD):** Si las pruebas son exitosas, se ejecuta `python -m build`, generando los archivos en `dist/`:
+4.  **Construcción del Package (CD):** Si las pruebas pasan, el comando `build` lee el archivo `pyproject.toml` y genera:
       * `*.tar.gz`: Source Distribution (`sdist`)
       * `*.whl`: Built Distribution (`wheel`)
-5.  **Publicación de Artifacts:** GitHub Actions sube los archivos de `dist/` como un *artifact* descargable, llamado `python-package`, accesible desde la interfaz web de la acción completada.
+5.  **Publicación de Artifacts:** GitHub Actions sube los archivos de `dist/` como un *artifact* descargable.
 
 -----
 
 ## 💻 6. Ejecución Local (Opcional)
 
-Puedes replicar el entorno de CI en tu máquina local para probar el código antes de hacer un *push*.
+Puedes replicar el entorno de CI en tu máquina local.
 
 ### 1\. Crear y activar entorno virtual
 
 ```bash
 python -m venv .venv
-
-# Linux/macOS:
-source .venv/bin/activate
-
-# Windows PowerShell:
+# Windows:
 .venv\Scripts\activate
+# Linux/Mac:
+source .venv/bin/activate
 ```
 
 ### 2\. Instalar dependencias
 
 ```bash
-python -m pip install --upgrade pip
 pip install pytest build
 ```
 
-### 3\. Ejecutar pruebas
+### 3\. Probar y Construir
 
 ```bash
+# Tests
+export PYTHONPATH=$PYTHONPATH:.  # (En Windows Powershell: $env:PYTHONPATH=".")
 pytest
-```
 
-### 4\. Construir el package local
-
-```bash
+# Build (Requiere pyproject.toml)
 python -m build
-
 ```
 
 -----
 
-## ⬆️ 7. Subir al Repositorio
+## 👤 7. Autor
 
-Si aún no lo has hecho, sigue estos pasos para inicializar tu repositorio y subir el código:
-
-```bash
-git init
-git add .
-git commit -m "Initial commit: CI/CD Python pipeline"
-git branch -M main
-git remote add origin https://github.com/TU_USUARIO/ci_cd_python.git
-git push -u origin main
-```
-
------
-
-## 👤 8. Autor
-
-**Omar** — Proyecto CI/CD en Python
+**OmarJB20** — Proyecto CI/CD en Python
 **Año:** 2025
+
+```
+```
