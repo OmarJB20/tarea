@@ -1,32 +1,26 @@
 🚀 Ejemplo Completo del Ciclo CI/CD con Python + GitHub Actions
 Construcción de Package + Pruebas + Artefactos
 
-Este repositorio explica paso a paso cómo funciona un pipeline CI/CD utilizando GitHub Actions, desde el push del código hasta la generación de un package (.zip).
+Este repositorio explica paso a paso cómo funciona un pipeline CI/CD utilizando GitHub Actions, desde el push del código hasta la generación de un package de Python (sdist y wheel).
 Incluye ejemplo práctico, archivo de workflow funcional, pruebas unitarias y artefactos generados automáticamente.
 
 📌 1. ¿Qué es CI/CD?
 ✔ CI (Integración Continua)
 
-Es el proceso automático que se ejecuta cada vez que subimos código al repositorio. Incluye actividades como:
+Proceso automático que se ejecuta cada vez que subimos código al repositorio. Incluye actividades como:
 
 Descargar el repositorio
 
 Instalar dependencias
 
-Ejecutar pruebas
+Ejecutar pruebas unitarias
 
-Validar que el código esté correcto
+Validar que el código funcione correctamente
 
 ✔ CD (Entrega Continua)
 
-Consiste en generar automáticamente un package/artefacto listo para distribuir o desplegar.
-
-En este ejemplo, el pipeline genera un archivo:
-
-build.zip
-
-
-Este archivo contiene el proyecto empaquetado como salida final del pipeline.
+Consiste en generar automáticamente un package o artefacto listo para distribuir o desplegar.
+En este proyecto, se construye el package en formato estándar de Python (*.tar.gz y *.whl) dentro de dist/.
 
 📌 2. Estructura del Proyecto
 ci_cd_python/
@@ -34,29 +28,31 @@ ci_cd_python/
 ├── calculator.py
 ├── tests/
 │   └── test_calculator.py
+├── pyproject.toml
 └── .github/
     └── workflows/
         └── ci.yml
 
 📌 3. Explicación del Ejemplo Práctico
 
-Este proyecto incluye una pequeña función matemática, una app principal y pruebas automáticas.
+Este proyecto incluye:
+
+Una función matemática simple
+
+Una app principal
+
+Pruebas automáticas con pytest
 
 ✔ 3.1 Archivo calculator.py
 def add(a, b):
+    """Suma dos números y devuelve el resultado."""
     return a + b
-
-
-Función simple usada como ejemplo para el pipeline CI/CD.
 
 ✔ 3.2 Archivo app.py
 from calculator import add
 
 if __name__ == "__main__":
     print("Suma:", add(5, 7))
-
-
-Programa principal que usa la función add().
 
 ✔ 3.3 Archivo de pruebas tests/test_calculator.py
 from calculator import add
@@ -65,36 +61,15 @@ def test_add():
     assert add(2, 3) == 5
 
 
-Prueba unitaria que:
+Comprueba que la función add() funciona correctamente
 
-Llama a la función add()
-
-Verifica que la función retorna el resultado correcto
-
-Si esta prueba falla → el CI detiene el pipeline.
+Si falla → el CI detiene el pipeline
 
 📌 4. Pipeline CI/CD (GitHub Actions)
 
-El archivo del workflow se encuentra en:
+Archivo: .github/workflows/ci.yml
 
-.github/workflows/ci.yml
-
-
-Este archivo ejecuta:
-
-Descarga del repositorio
-
-Instalación de Python
-
-Instalación de dependencias
-
-Ejecución de pruebas
-
-Construcción del package (.zip)
-
-Publicación del artefacto
-
-✔ 4.1 Contenido del workflow ci.yml
+Contenido:
 name: CI Pipeline
 
 on:
@@ -105,84 +80,81 @@ jobs:
   build-test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
 
-    - name: Install dependencies
-      run: |
-        pip install pytest
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest build
 
-    - name: Run tests
-      run: pytest
+      - name: Run tests
+        run: pytest
 
-    - name: Build package artifact
-      run: zip -r build.zip .
-      shell: bash
+      - name: Build Python package
+        run: python -m build
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: build
-        path: build.zip
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package
+          path: dist/*
 
-📌 5. ¿Cómo Funciona el Pipeline?
-🔹 1. Push al repositorio
+📌 5. Cómo funciona el pipeline
 
-Cada vez que haces:
+Push al repositorio: Cada vez que haces git push, GitHub ejecuta el workflow.
 
-git add .
-git commit -m "mensaje"
-git push
+Instalación del entorno: Crea una VM Ubuntu y descarga el repositorio.
 
+Ejecución de pruebas: Corre pytest. Si falla → pipeline detenido.
 
-GitHub ejecuta automáticamente el workflow.
+Construcción del package: Ejecuta python -m build → genera dist/ con:
 
-🔹 2. Instalación del entorno
+*.tar.gz → source distribution
 
-El job crea una máquina virtual Ubuntu y descarga el código del repositorio.
+*.whl → wheel
 
-🔹 3. Ejecución de pruebas
-
-El workflow ejecuta:
-
-pytest
-
-
-✔ Si las pruebas pasan → el pipeline continúa
-✘ Si una prueba falla → el pipeline se detiene
-
-🔹 4. Construcción del package
-
-El pipeline genera un archivo comprimido:
-
-build.zip
-
-
-Que incluye TODO el proyecto.
-
-🔹 5. Publicación del artefacto
-
-El archivo generado se sube automáticamente a GitHub Actions → Artifacts
-Desde ahí puedes descargarlo.
+Publicación de artifacts: GitHub Actions guarda los archivos de dist/ como artifacts descargables.
 
 📌 6. Ejecución local
-python app.py
+
+Crear y activar entorno virtual:
+
+python -m venv .venv
+# Linux/macOS:
+source .venv/bin/activate
+# Windows PowerShell:
+.venv\Scripts\activate
+
+
+Instalar dependencias:
+
+python -m pip install --upgrade pip
+pip install pytest build
+
+
+Ejecutar pruebas:
+
 pytest
 
-📌 7. ¿Qué debes subir a tu repositorio?
 
-Debes crear un repositorio en GitHub y subir:
+Construir el package local:
 
-✔ README.md
-✔ calculator.py
-✔ app.py
-✔ tests/test_calculator.py
-✔ .github/workflows/ci.yml
+python -m build
+# Archivos generados en dist/: .tar.gz y .whl
 
+📌 7. Subir al repositorio
+git init
+git add .
+git commit -m "Initial commit: CI/CD Python pipeline"
+git branch -M main
+git remote add origin https://github.com/TU_USUARIO/ci_cd_python.git
+git push -u origin main
 
 
 📌 8. Autor
